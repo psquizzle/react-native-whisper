@@ -25,7 +25,18 @@ This project is in no way stable or complete!! Feel free to contribute.
 ```sh
 npm install react-native-whisper
 ```
+
+```sh
+yarn add react-native-whisper
+```
+
 For iOS also run `pod install` in `/ios` folder.
+
+If you are using with Expo, run
+
+```sh
+expo prebuild
+```
 
 
 ## Prerequisites
