@@ -1,4 +1,4 @@
-# import Whisper from 'react-native-whisper'
+# React Native Whisper
 
 This is a proof of concept of a JSI library for [OpenAI Whisper ](https://openai.com/research/whisper), it combines a C++ port of Whisper from [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and a JSI template from [this blog.](https://blog.notesnook.com/getting-started-react-native-jsi/)
 
