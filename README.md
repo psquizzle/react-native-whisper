@@ -1,6 +1,7 @@
 # import Whisper from 'react-native-whisper'
 
-This is a proof of concept of a JSI library for [OpenAI Whisper ](https://openai.com/research/whisper), it combines a C++ port of Whisper from [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and a JSI template from [blog](https://blog.notesnook.com/getting-started-react-native-jsi/)
+This is a proof of concept of a JSI library for [OpenAI Whisper ](https://openai.com/research/whisper), it combines a C++ port of Whisper from [whisper.cpp](https://github.com/ggerganov/whisper.cpp) and a JSI template from [this blog.](https://blog.notesnook.com/getting-started-react-native-jsi/)
+
 
 ## Usage 
 
@@ -9,10 +10,12 @@ import Whisper from 'react-native-whisper'
 
 Whisper.transcribeWavToText(pathOfModel,pathOfAudio,(text)=>{alert(text)})
 
+```
+
 You can specify the location of the model or .wav audio file by providing either its full path (e.g., file:///path/to/file) or its Unix-style path (e.g., /path/to/file).
 
 
-```
+
 
 This project is in no way stable or complete!! Feel free to contribute.
 
