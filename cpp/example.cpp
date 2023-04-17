@@ -13,9 +13,9 @@ namespace example
     void install(Runtime &jsiRuntime)
     {
 
-        auto transcribeWavToText = Function::createFromHostFunction(jsiRuntime,
+        auto transcribeAudioToText = Function::createFromHostFunction(jsiRuntime,
                                                                     PropNameID::forAscii(jsiRuntime,
-                                                                                         "transcribeWavToText"),
+                                                                                         "transcribeAudioToText"),
                                                                     0,
                                                                     [](Runtime &runtime,
                                                                        const Value &thisValue,
@@ -36,7 +36,9 @@ namespace example
                                                                         return Value();
                                                                     });
 
-        jsiRuntime.global().setProperty(jsiRuntime, "transcribeWavToText", move(transcribeWavToText));
+        jsiRuntime.global().setProperty(jsiRuntime, "transcribeAudioToText", move(transcribeAudioToText));
+
+         
 
         auto multiply = Function::createFromHostFunction(jsiRuntime,
                                                          PropNameID::forAscii(jsiRuntime,

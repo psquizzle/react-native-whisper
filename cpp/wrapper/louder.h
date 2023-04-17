@@ -9,7 +9,20 @@
 #include <cstdint>
 #include <ggml.h>
 #include <jsi/jsi.h>
+#include "resample_to_pcm.h"
+
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+#include <libavutil/opt.h>
+#include <libswresample/swresample.h>
+}
+
 using namespace std;
+
+
 
 struct whisper_params
 {
@@ -159,7 +172,7 @@ void whisper_print_segment_callback(struct whisper_context *ctx, int n_new, void
     }
 }
 
-int run(whisper_params &params, std::vector<std::vector<std::string>> &result)
+int run(whisper_params &params, std::vector<std::vector<std::string>> &result, const std::vector<uint8_t> *pcm_data = nullptr)
 {
     if (params.fname_inp.empty())
     {
@@ -209,7 +222,19 @@ int run(whisper_params &params, std::vector<std::vector<std::string>> &result)
         std::vector<float> pcmf32;               // mono-channel F32 PCM
         std::vector<std::vector<float>> pcmf32s; // stereo-channel F32 PCM
 
-        if (!::read_wav(fname_inp, pcmf32, pcmf32s, params.diarize))
+        if (pcm_data)
+        {
+            int bytes_per_sample = 2; // For pcm_s16le
+            int num_samples = pcm_data->size() / (bytes_per_sample);
+
+            pcmf32.resize(num_samples);
+            for (int i = 0; i < num_samples; ++i)
+            {
+                int16_t sample = static_cast<int16_t>(pcm_data->at(2 * i) | (pcm_data->at(2 * i + 1) << 8));
+                pcmf32[i] = static_cast<float>(sample) / 32768.0f;
+            }
+        }
+        else if (!::read_wav(fname_inp, pcmf32, pcmf32s, params.diarize))
         {
             fprintf(stderr, "error: failed to read WAV file '%s'\n", fname_inp.c_str());
             continue;
@@ -312,8 +337,8 @@ int run(whisper_params &params, std::vector<std::vector<std::string>> &result)
         const int64_t t0 = whisper_full_get_segment_t0(ctx, i);
         const int64_t t1 = whisper_full_get_segment_t1(ctx, i);
 
-        result[i].emplace_back(to_timestamp(t0, true));
-        result[i].emplace_back(to_timestamp(t1, true));
+       // result[i].emplace_back(to_timestamp(t0, true));
+      //  result[i].emplace_back(to_timestamp(t1, true));
         result[i].emplace_back(text);
     }
 
@@ -334,6 +359,32 @@ void cout_params(whisper_params params)
     }
 }
 
+std::string transcribePCMToTextCPP(const std::string &model, const std::string &file, facebook::jsi::Function &callback, facebook::jsi::Runtime &runtime)
+{
+    whisper_params params;
+    std::vector<std::vector<std::string>> result;
+    params.fname_inp.emplace_back(file.c_str());
+    params.model = model.c_str();
+
+    std::vector<uint8_t> converted_samples = convert_audio(file.c_str());
+
+    run(params, result, &converted_samples);
+
+    std::string result_str = "result:\n";
+    for (const auto &vec_elem : result)
+    {
+        result_str += "    ";
+        for (const auto &str_elem : vec_elem)
+        {
+            result_str += str_elem + " ";
+        }
+        result_str += "\n";
+    }
+
+    callback.call(runtime, facebook::jsi::String::createFromUtf8(runtime, result_str));
+    return result_str;
+}
+
 std::string transcribeWavToTextCPP(const std::string &model, const std::string &file, facebook::jsi::Function &callback, facebook::jsi::Runtime &runtime)
 {
     whisper_params params;
@@ -341,9 +392,17 @@ std::string transcribeWavToTextCPP(const std::string &model, const std::string &
     params.fname_inp.emplace_back(file.c_str());
     params.model = model.c_str();
 
-    run(params, result);
+    if (is_pcm_s16le_wav(file.c_str()))
+    {
+        run(params, result);
+    }
+    else
+    {
+        std::vector<uint8_t> converted_samples = convert_audio(file.c_str());
+        run(params, result, &converted_samples);
+    }
 
-    std::string result_str = "result:\n";
+    std::string result_str = "";
     for (const auto &vec_elem : result)
     {
         result_str += "    ";
